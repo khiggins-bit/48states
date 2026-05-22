@@ -1,408 +1,283 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>U.S. Borderless Geography Game</title>
-    <style>
-        :root {
-            --primary: #4a90e2;
-            --dark: #2c3e50;
-            --light: #ecf0f1;
-            --success: #2ecc71;
-        }
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+#app { font-family: sans-serif; padding: 1rem; min-height: 500px; background: #f5f4f0; color: #1a1a1a; }
+#setup-screen { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; padding: 2rem 1rem; }
+#setup-screen h1 { font-size: 22px; font-weight: 500; }
+#setup-screen p { font-size: 15px; color: #555; text-align: center; max-width: 400px; }
+.option-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 480px; }
+.option-btn { padding: 12px 8px; border: 1.5px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; font-weight: 500; color: #1a1a1a; transition: all 0.15s; }
+.option-btn:hover { border-color: #888; background: #f0f0f0; }
+.option-btn.selected { border-color: #185FA5; background: #E6F1FB; color: #185FA5; }
+#start-btn { padding: 10px 32px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; }
+#start-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+#game-screen { display: none; flex-direction: column; gap: 0.75rem; }
+#hud { display: flex; align-items: center; justify-content: space-between; padding: 0 0 0.25rem; }
+#state-prompt { font-size: 20px; font-weight: 500; text-align: center; flex: 1; color: #1a1a1a; }
+#score-box { font-size: 14px; color: #555; text-align: right; min-width: 110px; }
+#progress-bar-wrap { height: 4px; background: #ddd; border-radius: 2px; overflow: hidden; }
+#progress-bar { height: 4px; background: #185FA5; border-radius: 2px; transition: width 0.3s; }
+#map-container { position: relative; width: 100%; cursor: crosshair; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+#map-svg { width: 100%; height: auto; display: block; background: #e8e8e8; }
+#feedback { min-height: 36px; text-align: center; font-size: 15px; font-weight: 500; }
+#next-btn { display: none; margin: 0 auto; padding: 9px 28px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+#results-screen { display: none; flex-direction: column; align-items: center; gap: 1.25rem; padding: 2rem 1rem; }
+#results-screen h2 { font-size: 20px; font-weight: 500; }
+#final-score { font-size: 48px; font-weight: 500; color: #185FA5; }
+#results-screen p { color: #555; font-size: 14px; }
+#play-again-btn { padding: 10px 28px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+</style>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--light);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--dark);
-        }
-
-        h1 { margin-bottom: 10px; }
-
-        #setup-screen, #game-screen, #end-screen {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 900px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .hidden { display: none !important; }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin: 10px;
-        }
-
-        button:hover { background-color: #357abd; }
-
-        .options-container {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        #stats-bar {
-            display: flex;
-            justify-content: space-between;
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            background: #f8f9fa;
-            padding: 10px 20px;
-            border-radius: 6px;
-        }
-
-        #prompt-container {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-
-        #target-state {
-            color: var(--primary);
-            font-weight: bold;
-            background: #e1f5fe;
-            padding: 2px 10px;
-            border-radius: 4px;
-        }
-
-        #map-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            background: #a5c9eb; /* Water/background color */
-            overflow: hidden;
-        }
-
-        svg {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        /* State Styling */
-        .state {
-            fill: #f9f9f9;
-            stroke: #f9f9f9; /* Hide borders by making them match fill */
-            stroke-width: 1;
-            cursor: crosshair;
-            transition: fill 0.3s, stroke 0.3s;
-        }
-
-        /* When the map outline itself is rendered */
-        #usa-outline {
-            fill: #f9f9f9;
-            stroke: #333;
-            stroke-width: 1.5;
-            pointer-events: none;
-        }
-
-        .state.revealed {
-            fill: #ffe082 !important;
-            stroke: #e65100 !important;
-            stroke-width: 2 !important;
-        }
-
-        /* Feedback Layer Overlay */
-        #feedback-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .click-circle {
-            fill: #e74c3c;
-            stroke: white;
-            stroke-width: 1.5;
-        }
-
-        .feedback-line {
-            stroke: #e74c3c;
-            stroke-width: 2;
-            stroke-dasharray: 4;
-        }
-
-        .score-popup {
-            font-weight: bold;
-            font-size: 16px;
-            fill: #2c3e50;
-            animation: floatUp 1s ease-out forwards;
-        }
-
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-20px); opacity: 0; }
-        }
-    </style>
-</head>
-<body>
-
-    <h1>U.S. Geography Blind Map Challenge</h1>
-
-    <div id="setup-screen">
-        <h2>Welcome, Class!</h2>
-        <p>Can you find the states without any borders to guide you? Choose your game length to begin:</p>
-        <div class="options-container">
-            <button onclick="startGame(10)">10 States</button>
-            <button onclick="startGame(20)">20 States</button>
-            <button onclick="startGame(30)">30 States</button>
-            <button onclick="startGame(48)">All 48 States</button>
-        </div>
+<div id="app">
+  <div id="setup-screen">
+    <h1>🗺️ US States Geography Quiz</h1>
+    <p>Click on the map to place each state. The closer your click, the more points you earn!</p>
+    <div>
+      <p style="font-size:13px; color:#555; text-align:center; margin-bottom:10px;">How many states do you want to review?</p>
+      <div class="option-grid">
+        <button class="option-btn" data-count="10">10 states</button>
+        <button class="option-btn" data-count="20">20 states</button>
+        <button class="option-btn" data-count="30">30 states</button>
+        <button class="option-btn" data-count="48">All 48</button>
+      </div>
     </div>
+    <button id="start-btn" disabled>Start game</button>
+  </div>
 
-    <div id="game-screen" class="hidden">
-        <div id="stats-bar">
-            <div>State: <span id="current-turn">1</span>/<span id="total-turns">10</span></div>
-            <div>Score: <span id="total-score">0</span></div>
-        </div>
-        
-        <div id="prompt-container">
-            Locate and click on: <span id="target-state">---</span>
-        </div>
-
-        <div id="map-wrapper">
-            <svg id="usa-svg" viewBox="0 0 960 600">
-                <path id="usa-outline" d="M150,150 L800,100 L900,400 L600,550 L200,500 Z" style="fill:#f9f9f9; stroke:#555; stroke-width:2;"/>
-                
-                <g id="states-group">
-                    <path id="CA" class="state" d="M100,150 L160,170 L130,350 L70,300 Z" data-name="California" data-cx="115" data-cy="240" />
-                    <path id="TX" class="state" d="M350,380 L480,370 L500,500 L380,520 L320,440 Z" data-name="Texas" data-cx="410" data-cy="450" />
-                    <path id="NY" class="state" d="M800,180 L850,160 L870,200 L820,220 Z" data-name="New York" data-cx="835" data-cy="190" />
-                    <path id="FL" class="state" d="M780,450 L830,460 L810,550 L770,500 Z" data-name="Florida" data-cx="800" data-cy="500" />
-                    <path id="KS" class="state" d="M420,280 L500,280 L500,330 L420,330 Z" data-name="Kansas" data-cx="460" data-cy="305" />
-                    <path id="IL" class="state" d="M610,230 L650,230 L640,310 L600,290 Z" data-name="Illinois" data-cx="625" data-cy="265" />
-                    <path id="WA" class="state" d="M90,80 L180,90 L160,140 L90,130 Z" data-name="Washington" data-cx="130" data-cy="110" />
-                    <path id="OR" class="state" d="M80,130 L190,140 L180,210 L80,190 Z" data-name="Oregon" data-cx="135" data-cy="170" />
-                    <path id="CO" class="state" d="M300,260 L400,260 L400,330 L300,330 Z" data-name="Colorado" data-cx="350" data-cy="295" />
-                    <path id="MI" class="state" d="M650,160 L700,170 L680,230 L640,210 Z" data-name="Michigan" data-cx="670" data-cy="195" />
-                    </g>
-
-                <g id="feedback-layer"></g>
-            </svg>
-        </div>
-
-        <button id="next-btn" class="hidden" onclick="nextTurn()">Next State &rarr;</button>
+  <div id="game-screen">
+    <div id="hud">
+      <div style="min-width:110px; font-size:13px; color:#555;" id="counter-box">0 / 0</div>
+      <div id="state-prompt">—</div>
+      <div id="score-box">Score: <strong>0</strong></div>
     </div>
-
-    <div id="end-screen" class="hidden">
-        <h2>Game Over!</h2>
-        <p>Great job practicing your spatial geography!</p>
-        <h3 style="font-size: 28px;">Final Score: <span id="final-score">0</span></h3>
-        <button onclick="resetGame()">Play Again</button>
+    <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+    <div id="map-container">
+      <svg id="map-svg" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
+        <g id="states-layer"></g>
+        <g id="overlay-layer"></g>
+      </svg>
     </div>
+    <div id="feedback"></div>
+    <button id="next-btn">Next state →</button>
+  </div>
 
-    <script>
-        // State Directory Database fallback to populate missing paths mathematically for full functionality
-        const stateData = [
-            { id: "CA", name: "California", cx: 115, cy: 240 },
-            { id: "TX", name: "Texas", cx: 410, cy: 450 },
-            { id: "NY", name: "New York", cx: 835, cy: 190 },
-            { id: "FL", name: "Florida", cx: 800, cy: 500 },
-            { id: "KS", name: "Kansas", cx: 460, cy: 305 },
-            { id: "IL", name: "Illinois", cx: 625, cy: 265 },
-            { id: "WA", name: "Washington", cx: 130, cy: 110 },
-            { id: "OR", name: "Oregon", cx: 135, cy: 170 },
-            { id: "CO", name: "Colorado", cx: 350, cy: 295 },
-            { id: "MI", name: "Michigan", cx: 670, cy: 195 }
-        ];
+  <div id="results-screen">
+    <h2>Game over!</h2>
+    <div id="final-score">0</div>
+    <p id="results-detail"></p>
+    <button id="play-again-btn">Play again</button>
+  </div>
+</div>
 
-        // Dynamically generating proxy data for the remaining 48 states to keep HTML clean 
-        const basicRoster = [
-            {id:"AZ", name:"Arizona", cx:200, cy:370}, {id:"NM", name:"New Mexico", cx:280, cy:380},
-            {id:"NV", name:"Nevada", cx:140, cy:220}, {id:"UT", name:"Utah", cx:220, cy:260},
-            {id:"WY", name:"Wyoming", cx:320, cy:200}, {id:"MT", name:"Montana", cx:280, cy:110},
-            {id:"ID", name:"Idaho", cx:180, cy:150}, {id:"ND", name:"North Dakota", cx:430, cy:110},
-            {id:"SD", name:"South Dakota", cx:430, cy:170}, {id:"NE", name:"Nebraska", cx:440, cy:230},
-            {id:"OK", name:"Oklahoma", cx:450, cy:370}, {id:"MN", name:"Minnesota", cx:540, cy:140},
-            {id:"IA", name:"Iowa", cx:550, cy:220}, {id:"MO", name:"Missouri", cx:560, cy:290},
-            {id:"AR", name:"Arkansas", cx:560, cy:380}, {id:"LA", name:"Louisiana", cx:570, cy:460},
-            {id:"WI", name:"Wisconsin", cx:610, cy:160}, {id:"TN", name:"Tennessee", cx:680, cy:340},
-            {id:"MS", name:"Mississippi", cx:620, cy:430}, {id:"AL", name:"Alabama", cx:670, cy:430},
-            {id:"GA", name:"Georgia", cx:730, cy:420}, {id:"SC", name:"South Carolina", cx:770, cy:380},
-            {id:"NC", name:"North Carolina", cx:800, cy:340}, {id:"VA", name:"Virginia", cx:810, cy:290},
-            {id:"WV", name:"West Virginia", cx:770, cy:260}, {id:"KY", name:"Kentucky", cx:690, cy:290},
-            {id:"OH", name:"Ohio", cx:720, cy:230}, {id:"PA", name:"Pennsylvania", cx:800, cy:210},
-            {id:"NJ", name:"New Jersey", cx:845, cy:220}, {id:"DE", name:"Delaware", cx:845, cy:240},
-            {id:"MD", name:"Maryland", cx:830, cy:250}, {id:"CT", name:"Connecticut", cx:870, cy:195},
-            {id:"RI", name:"Rhode Island", cx:885, cy:195}, {id:"MA", name:"Massachusetts", cx:875, cy:185},
-            {id:"VT", name:"Vermont", cx:845, cy:150}, {id:"NH", name:"New Hampshire", cx:860, cy:150},
-            {id:"ME", name:"Maine", cx:890, cy:110}, {id:"IN", name:"Indiana", cx:670, cy:240}
-        ];
-        
-        // Combine rosters to build full 48 set
-        const completeStates = [...stateData];
-        basicRoster.forEach(item => {
-            if(!completeStates.find(s => s.id === item.id)) {
-                completeStates.push(item);
-                // Dynamically inject invisible layout placeholders into SVG for smooth clicking mechanics
-                const g = document.getElementById('states-group');
-                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                path.setAttribute("id", item.id);
-                path.setAttribute("class", "state");
-                // Fallback geometry circle profile representing the state target area
-                path.setAttribute("d", `M${item.cx-20},${item.cy-20} A20,20 0 1,1 ${item.cx+20},${item.cy+20} Z`);
-                path.setAttribute("data-name", item.name);
-                path.setAttribute("data-cx", item.cx);
-                path.setAttribute("data-cy", item.cy);
-                g.appendChild(path);
-            }
-        });
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+const MAP_FILL = '#d0cfc9';
 
-        let gameList = [];
-        let currentIdx = 0;
-        let runningScore = 0;
-        let totalTurnsCount = 0;
-        let hasClickedCurrentTurn = false;
+const STATE_DATA = {
+  "Alabama":{"fips":"01"},"Arizona":{"fips":"04"},"Arkansas":{"fips":"05"},
+  "California":{"fips":"06"},"Colorado":{"fips":"08"},"Connecticut":{"fips":"09"},
+  "Delaware":{"fips":"10"},"Florida":{"fips":"12"},"Georgia":{"fips":"13"},
+  "Idaho":{"fips":"16"},"Illinois":{"fips":"17"},"Indiana":{"fips":"18"},
+  "Iowa":{"fips":"19"},"Kansas":{"fips":"20"},"Kentucky":{"fips":"21"},
+  "Louisiana":{"fips":"22"},"Maine":{"fips":"23"},"Maryland":{"fips":"24"},
+  "Massachusetts":{"fips":"25"},"Michigan":{"fips":"26"},"Minnesota":{"fips":"27"},
+  "Mississippi":{"fips":"28"},"Missouri":{"fips":"29"},"Montana":{"fips":"30"},
+  "Nebraska":{"fips":"31"},"Nevada":{"fips":"32"},"New Hampshire":{"fips":"33"},
+  "New Jersey":{"fips":"34"},"New Mexico":{"fips":"35"},"New York":{"fips":"36"},
+  "North Carolina":{"fips":"37"},"North Dakota":{"fips":"38"},"Ohio":{"fips":"39"},
+  "Oklahoma":{"fips":"40"},"Oregon":{"fips":"41"},"Pennsylvania":{"fips":"42"},
+  "Rhode Island":{"fips":"44"},"South Carolina":{"fips":"45"},"South Dakota":{"fips":"46"},
+  "Tennessee":{"fips":"47"},"Texas":{"fips":"48"},"Utah":{"fips":"49"},
+  "Vermont":{"fips":"50"},"Virginia":{"fips":"51"},"Washington":{"fips":"53"},
+  "West Virginia":{"fips":"54"},"Wisconsin":{"fips":"55"},"Wyoming":{"fips":"56"}
+};
+const CONTIGUOUS_FIPS = new Set(Object.values(STATE_DATA).map(d=>d.fips));
 
-        const svgElement = document.getElementById('usa-svg');
-        const feedbackLayer = document.getElementById('feedback-layer');
+let projection, pathGen, topoData, geoFeatures;
+let gameCount=0, stateQueue=[], currentIdx=0, totalScore=0, answered=false, selectedCount=null;
 
-        // Capture global SVG click event mapping
-        svgElement.addEventListener('click', function(e) {
-            if (hasClickedCurrentTurn) return; // Prevent double clicking the same turn
+const setupScreen = document.getElementById('setup-screen');
+const gameScreen = document.getElementById('game-screen');
+const resultsScreen = document.getElementById('results-screen');
+const statePrompt = document.getElementById('state-prompt');
+const scoreBox = document.getElementById('score-box');
+const counterBox = document.getElementById('counter-box');
+const feedback = document.getElementById('feedback');
+const nextBtn = document.getElementById('next-btn');
+const progressBar = document.getElementById('progress-bar');
+const mapSvg = document.getElementById('map-svg');
+const statesLayer = document.getElementById('states-layer');
+const overlayLayer = document.getElementById('overlay-layer');
 
-            // Determine accurate coordinate translation inside scaled SVG box
-            const rect = svgElement.getBoundingClientRect();
-            const viewBox = svgElement.viewBox.baseVal;
-            const clickX = ((e.clientX - rect.left) / rect.width) * viewBox.width;
-            const clickY = ((e.clientY - rect.top) / rect.height) * viewBox.height;
+document.querySelectorAll('.option-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedCount = parseInt(btn.dataset.count);
+    document.getElementById('start-btn').disabled = false;
+  });
+});
 
-            // Identity target elements
-            const targetStateObj = gameList[currentIdx];
-            const stateDOM = document.getElementById(targetStateObj.id);
-            const isInsideTarget = (e.target.id === targetStateObj.id);
+document.getElementById('start-btn').addEventListener('click', startGame);
+nextBtn.addEventListener('click', nextState);
+document.getElementById('play-again-btn').addEventListener('click', () => {
+  resultsScreen.style.display = 'none';
+  setupScreen.style.display = 'flex';
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('start-btn').disabled = true;
+  selectedCount = null;
+});
 
-            processUserClick(clickX, clickY, targetStateObj, stateDOM, isInsideTarget);
-        });
+async function loadMap() {
+  if (topoData) return;
+  const res = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');
+  topoData = await res.json();
+  geoFeatures = topojson.feature(topoData, topoData.objects.states).features
+    .filter(f => CONTIGUOUS_FIPS.has(f.id.toString().padStart(2,'0')));
 
-        function startGame(turns) {
-            totalTurnsCount = turns;
-            runningScore = 0;
-            currentIdx = 0;
-            hasClickedCurrentTurn = false;
+  projection = d3.geoAlbersUsa().scale(1280).translate([480, 300]);
+  pathGen = d3.geoPath().projection(projection);
 
-            // Shuffle data entries randomly using standard Fisher-Yates
-            let shuffled = [...completeStates].sort(() => 0.5 - Math.random());
-            gameList = shuffled.slice(0, turns);
+  statesLayer.innerHTML = '';
+  geoFeatures.forEach(f => {
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', pathGen(f));
+    path.setAttribute('fill', MAP_FILL);
+    path.setAttribute('stroke', MAP_FILL);
+    path.setAttribute('stroke-width', '0.5');
+    path.dataset.fips = f.id.toString().padStart(2,'0');
+    statesLayer.appendChild(path);
+  });
+}
 
-            document.getElementById('total-turns').innerText = turns;
-            document.getElementById('total-score').innerText = "0";
-            
-            document.getElementById('setup-screen').classList.add('hidden');
-            document.getElementById('end-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
+function startGame() {
+  setupScreen.style.display = 'none';
+  gameScreen.style.display = 'flex';
+  gameScreen.style.flexDirection = 'column';
+  totalScore=0; currentIdx=0; answered=false;
+  const shuffled = Object.keys(STATE_DATA).sort(() => Math.random() - 0.5);
+  stateQueue = shuffled.slice(0, selectedCount);
+  gameCount = stateQueue.length;
+  scoreBox.innerHTML = 'Score: <strong>0</strong>';
+  loadMap().then(() => showState());
+}
 
-            setupTurn();
-        }
+function showState() {
+  answered = false;
+  nextBtn.style.display = 'none';
+  feedback.textContent = '';
+  overlayLayer.innerHTML = '';
+  resetStateColors();
+  statePrompt.textContent = stateQueue[currentIdx];
+  counterBox.textContent = (currentIdx+1) + ' / ' + gameCount;
+  progressBar.style.width = (currentIdx/gameCount*100) + '%';
+  mapSvg.style.cursor = 'crosshair';
+}
 
-        function setupTurn() {
-            hasClickedCurrentTurn = false;
-            document.getElementById('next-btn').classList.add('hidden');
-            feedbackLayer.innerHTML = ""; // Clear visual markers
-            
-            // Clear prior revealed classes
-            document.querySelectorAll('.state').forEach(el => el.classList.remove('revealed'));
+function resetStateColors() {
+  statesLayer.querySelectorAll('path').forEach(p => {
+    p.setAttribute('fill', MAP_FILL);
+    p.setAttribute('stroke', MAP_FILL);
+    p.setAttribute('stroke-width', '0.5');
+  });
+}
 
-            document.getElementById('current-turn').innerText = currentIdx + 1;
-            document.getElementById('target-state').innerText = gameList[currentIdx].name;
-        }
+mapSvg.addEventListener('click', function(e) {
+  if (answered) return;
+  answered = true;
+  mapSvg.style.cursor = 'default';
 
-        function processUserClick(clickX, clickY, targetState, stateDOM, isInside) {
-            hasClickedCurrentTurn = true;
-            let finalTurnScore = 0;
-            
-            const targetX = targetState.cx;
-            const targetY = targetState.cy;
-            
-            // Vector Distance
-            const distance = Math.sqrt(Math.pow(clickX - targetX, 2) + Math.pow(clickY - targetY, 2));
+  const rect = mapSvg.getBoundingClientRect();
+  const scaleX = 960 / rect.width;
+  const scaleY = 600 / rect.height;
+  const svgX = (e.clientX - rect.left) * scaleX;
+  const svgY = (e.clientY - rect.top) * scaleY;
 
-            if (isInside) {
-                finalTurnScore = 100;
-            } else {
-                // Exponential decay function: Score = 100 * e^(-k * distance)
-                const k = 0.015; // Steepness parameter
-                finalTurnScore = Math.max(0, Math.floor(100 * Math.exp(-k * distance)));
-            }
+  const stateName = stateQueue[currentIdx];
+  const fips = STATE_DATA[stateName].fips;
+  const feature = geoFeatures.find(f => f.id.toString().padStart(2,'0') === fips);
+  if (!feature) return;
 
-            runningScore += finalTurnScore;
-            document.getElementById('total-score').innerText = runningScore;
+  const targetPath = statesLayer.querySelector(`[data-fips="${fips}"]`);
+  if (targetPath) {
+    targetPath.setAttribute('fill', '#B5D4F4');
+    targetPath.setAttribute('stroke', '#185FA5');
+    targetPath.setAttribute('stroke-width', '2');
+  }
 
-            // Reveal exact border profile of targeted state
-            if(stateDOM) stateDOM.classList.add('revealed');
+  const centroid = pathGen.centroid(feature);
+  const bounds = pathGen.bounds(feature);
+  const isInside = d3.geoContains(feature, projection.invert([svgX, svgY]));
 
-            // Render visual tracking indicators onto the feedback vector layer
-            renderVisualFeedback(clickX, clickY, targetX, targetY, finalTurnScore);
+  let points;
+  if (isInside) {
+    points = 100;
+  } else {
+    const dx = Math.max(bounds[0][0]-svgX, 0, svgX-bounds[1][0]);
+    const dy = Math.max(bounds[0][1]-svgY, 0, svgY-bounds[1][1]);
+    const distPx = Math.sqrt(dx*dx + dy*dy);
+    points = Math.max(0, Math.round(100 * Math.exp(-distPx/80)));
+  }
 
-            document.getElementById('next-btn').classList.remove('hidden');
-        }
+  totalScore += points;
+  scoreBox.innerHTML = 'Score: <strong>' + totalScore.toLocaleString() + '</strong>';
 
-        function renderVisualFeedback(cx, cy, tx, ty, score) {
-            // 1. Drop marker point element
-            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", cx);
-            circle.setAttribute("cy", cy);
-            circle.setAttribute("r", "6");
-            circle.setAttribute("class", "click-circle");
-            feedbackLayer.appendChild(circle);
+  const lineEl = document.createElementNS('http://www.w3.org/2000/svg','line');
+  lineEl.setAttribute('x1', svgX); lineEl.setAttribute('y1', svgY);
+  lineEl.setAttribute('x2', centroid[0]); lineEl.setAttribute('y2', centroid[1]);
+  lineEl.setAttribute('stroke', isInside ? '#1D9E75' : '#D85A30');
+  lineEl.setAttribute('stroke-width', '1.5');
+  lineEl.setAttribute('stroke-dasharray', '4 3');
+  overlayLayer.appendChild(lineEl);
 
-            // 2. Draw directional link line to real boundary origin
-            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("x1", cx);
-            line.setAttribute("y1", cy);
-            line.setAttribute("x2", tx);
-            line.setAttribute("y2", ty);
-            line.setAttribute("class", "feedback-line");
-            feedbackLayer.appendChild(line);
+  const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('cx', svgX); dot.setAttribute('cy', svgY);
+  dot.setAttribute('r', '6');
+  dot.setAttribute('fill', isInside ? '#1D9E75' : '#D85A30');
+  dot.setAttribute('stroke', '#fff');
+  dot.setAttribute('stroke-width', '2');
+  overlayLayer.appendChild(dot);
 
-            // 3. Score floating popup text component
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", cx + 10);
-            text.setAttribute("y", cy - 10);
-            text.setAttribute("class", "score-popup");
-            text.textContent = `+${score} pts`;
-            feedbackLayer.appendChild(text);
-        }
+  const bx = svgX + 10, by = svgY - 18;
+  const badgeRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  badgeRect.setAttribute('x', bx-2); badgeRect.setAttribute('y', by-12);
+  badgeRect.setAttribute('width', '56'); badgeRect.setAttribute('height', '18');
+  badgeRect.setAttribute('rx', '4');
+  badgeRect.setAttribute('fill', isInside ? '#1D9E75' : '#D85A30');
+  const badgeTxt = document.createElementNS('http://www.w3.org/2000/svg','text');
+  badgeTxt.setAttribute('x', bx+26); badgeTxt.setAttribute('y', by);
+  badgeTxt.setAttribute('text-anchor', 'middle');
+  badgeTxt.setAttribute('fill', '#fff');
+  badgeTxt.setAttribute('font-size', '11');
+  badgeTxt.setAttribute('font-weight', '500');
+  badgeTxt.textContent = '+' + points + ' pts';
+  overlayLayer.appendChild(badgeRect);
+  overlayLayer.appendChild(badgeTxt);
 
-        function nextTurn() {
-            currentIdx++;
-            if (currentIdx < totalTurnsCount) {
-                setupTurn();
-            } else {
-                // Finish Game
-                document.getElementById('game-screen').classList.add('hidden');
-                document.getElementById('end-screen').classList.remove('hidden');
-                document.getElementById('final-score').innerText = runningScore;
-            }
-        }
+  if (isInside) {
+    feedback.innerHTML = '✓ Nice! <strong>' + stateName + '</strong> — +' + points + ' points';
+    feedback.style.color = '#0F6E56';
+  } else {
+    feedback.innerHTML = '✗ That was <strong>' + stateName + '</strong> — +' + points + ' points';
+    feedback.style.color = '#993C1D';
+  }
 
-        function resetGame() {
-            document.getElementById('end-screen').classList.add('hidden');
-            document.getElementById('setup-screen').classList.remove('hidden');
-        }
-    </script>
-</body>
-</html>
+  nextBtn.style.display = 'block';
+  nextBtn.textContent = currentIdx === gameCount-1 ? 'See results' : 'Next state →';
+});
+
+function nextState() {
+  currentIdx++;
+  if (currentIdx >= gameCount) endGame();
+  else showState();
+}
+
+function endGame() {
+  gameScreen.style.display = 'none';
+  resultsScreen.style.display = 'flex';
+  document.getElementById('final-score').textContent = totalScore.toLocaleString();
+  const pct = Math.round(totalScore / (gameCount*100) * 100);
+  document.getElementById('results-detail').textContent =
+    gameCount + ' states · ' + totalScore.toLocaleString() + ' / ' + (gameCount*100).toLocaleString() + ' possible points (' + pct + '%)';
+}
+</script>
