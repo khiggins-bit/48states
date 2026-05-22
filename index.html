@@ -183,6 +183,39 @@ function resetStateColors() {
   });
 }
 
+// Finds the closest point on a GeoJSON polygon ring to a given [lng, lat]
+function closestPointOnRings(rings, lng, lat) {
+  let minDist = Infinity;
+  for (const ring of rings) {
+    for (let i = 0; i < ring.length - 1; i++) {
+      const [x1, y1] = projection(ring[i]);
+      const [x2, y2] = projection(ring[i+1]);
+      const px = projection([lng, lat]);
+      if (!px) continue;
+      const [cx, cy] = px;
+      const dx = x2 - x1, dy = y2 - y1;
+      const lenSq = dx*dx + dy*dy;
+      let t = lenSq > 0 ? ((cx-x1)*dx + (cy-y1)*dy) / lenSq : 0;
+      t = Math.max(0, Math.min(1, t));
+      const nearX = x1 + t*dx, nearY = y1 + t*dy;
+      const d = Math.sqrt((cx-nearX)**2 + (cy-nearY)**2);
+      if (d < minDist) minDist = d;
+    }
+  }
+  return minDist;
+}
+
+function getRings(feature) {
+  const rings = [];
+  const geom = feature.geometry;
+  if (geom.type === 'Polygon') {
+    rings.push(...geom.coordinates);
+  } else if (geom.type === 'MultiPolygon') {
+    geom.coordinates.forEach(poly => rings.push(...poly));
+  }
+  return rings;
+}
+
 mapSvg.addEventListener('click', function(e) {
   if (answered) return;
   answered = true;
@@ -207,17 +240,24 @@ mapSvg.addEventListener('click', function(e) {
   }
 
   const centroid = pathGen.centroid(feature);
-  const bounds = pathGen.bounds(feature);
-  const isInside = d3.geoContains(feature, projection.invert([svgX, svgY]));
+  const geoCoord = projection.invert([svgX, svgY]);
+  const isInside = geoCoord ? d3.geoContains(feature, geoCoord) : false;
 
   let points;
   if (isInside) {
     points = 100;
   } else {
-    const dx = Math.max(bounds[0][0]-svgX, 0, svgX-bounds[1][0]);
-    const dy = Math.max(bounds[0][1]-svgY, 0, svgY-bounds[1][1]);
-    const distPx = Math.sqrt(dx*dx + dy*dy);
-    points = Math.max(0, Math.round(100 * Math.exp(-distPx/80)));
+    // Measure pixel distance from click to nearest point on the actual border
+    let distPx;
+    if (geoCoord) {
+      distPx = closestPointOnRings(getRings(feature), geoCoord[0], geoCoord[1]);
+    } else {
+      // click was outside projection area — use centroid distance as fallback
+      distPx = Math.sqrt((svgX - centroid[0])**2 + (svgY - centroid[1])**2);
+    }
+    points = Math.max(0, Math.round(100 * Math.exp(-distPx / 80)));
+    // Cap at 99 so only true inside clicks earn 100
+    points = Math.min(points, 99);
   }
 
   totalScore += points;
