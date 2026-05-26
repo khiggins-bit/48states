@@ -1,87 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>US States Geography Quiz</title>
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;}
-body{font-family:sans-serif;background:#f5f4f0;color:#1a1a1a;display:flex;flex-direction:column;height:100vh;}
-
-.screen{display:none;flex-direction:column;height:100%;}
-.screen.active{display:flex;}
-
-#setup-screen{align-items:center;justify-content:center;gap:1.25rem;padding:1.5rem 1rem;overflow-y:auto;}
-#setup-screen h1{font-size:22px;font-weight:500;}
-#setup-screen .sub{font-size:14px;color:#555;text-align:center;max-width:400px;}
-.mode-label{font-size:13px;color:#555;}
-.option-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:460px;}
-.option-btn{padding:11px 6px;border:1.5px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;font-weight:500;color:#1a1a1a;transition:all .15s;}
-.option-btn:hover{border-color:#888;background:#f0f0f0;}
-.option-btn.selected{border-color:#185FA5;background:#E6F1FB;color:#185FA5;}
-#start-btn{padding:10px 32px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;}
-#start-btn:disabled{opacity:.35;cursor:not-allowed;}
-
-#game-screen{padding:.6rem .75rem;gap:.4rem;}
-#hud{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-#state-prompt{font-size:19px;font-weight:500;text-align:center;flex:1;color:#1a1a1a;}
-#score-box{font-size:13px;color:#555;text-align:right;min-width:100px;}
-#counter-box{min-width:70px;font-size:12px;color:#555;}
-#progress-bar-wrap{height:3px;background:#ddd;border-radius:2px;overflow:hidden;flex-shrink:0;}
-#progress-bar{height:3px;background:#185FA5;border-radius:2px;transition:width .3s;}
-#map-container{position:relative;flex:1;min-height:0;border-radius:8px;overflow:hidden;border:1px solid #ddd;}
-#map-svg{position:absolute;top:0;left:0;width:100%;height:100%;display:block;background:#e8e8e8;cursor:crosshair;}
-#feedback-row{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;min-height:34px;gap:8px;}
-#feedback{font-size:13px;font-weight:500;flex:1;}
-#next-btn{display:none;padding:7px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}
-
-#results-screen{align-items:center;justify-content:center;gap:1.25rem;padding:2rem 1rem;}
-#results-screen h2{font-size:20px;font-weight:500;}
-#final-score{font-size:52px;font-weight:500;color:#185FA5;}
-#results-screen .sub{color:#555;font-size:14px;}
-#play-again-btn{padding:10px 28px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+#app { font-family: sans-serif; padding: 1rem; min-height: 500px; background: #f5f4f0; color: #1a1a1a; }
+#setup-screen { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; padding: 2rem 1rem; }
+#setup-screen h1 { font-size: 22px; font-weight: 500; }
+#setup-screen p { font-size: 15px; color: #555; text-align: center; max-width: 400px; }
+.option-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 480px; }
+.option-btn { padding: 12px 8px; border: 1.5px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; font-weight: 500; color: #1a1a1a; transition: all 0.15s; }
+.option-btn:hover { border-color: #888; background: #f0f0f0; }
+.option-btn.selected { border-color: #185FA5; background: #E6F1FB; color: #185FA5; }
+#start-btn { padding: 10px 32px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; }
+#start-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+#game-screen { display: none; flex-direction: column; gap: 0.75rem; }
+#hud { display: flex; align-items: center; justify-content: space-between; padding: 0 0 0.25rem; }
+#state-prompt { font-size: 20px; font-weight: 500; text-align: center; flex: 1; color: #1a1a1a; }
+#score-box { font-size: 14px; color: #555; text-align: right; min-width: 110px; }
+#progress-bar-wrap { height: 4px; background: #ddd; border-radius: 2px; overflow: hidden; }
+#progress-bar { height: 4px; background: #185FA5; border-radius: 2px; transition: width 0.3s; }
+#map-container { position: relative; width: 100%; cursor: crosshair; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+#map-svg { width: 100%; height: auto; display: block; background: #e8e8e8; }
+#feedback { min-height: 36px; text-align: center; font-size: 15px; font-weight: 500; }
+#next-btn { display: none; margin: 0 auto; padding: 9px 28px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+#results-screen { display: none; flex-direction: column; align-items: center; gap: 1.25rem; padding: 2rem 1rem; }
+#results-screen h2 { font-size: 20px; font-weight: 500; }
+#final-score { font-size: 48px; font-weight: 500; color: #185FA5; }
+#results-screen p { color: #555; font-size: 14px; }
+#play-again-btn { padding: 10px 28px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
 </style>
-</head>
-<body>
 
-<div id="setup-screen" class="screen active">
-  <h1>🗺️ US States Geography Quiz</h1>
-  <p class="sub">Click on the map to place each state. The closer your click, the more points you earn!</p>
-  <p class="mode-label">How many states do you want to review?</p>
-  <div class="option-grid">
-    <button class="option-btn" data-count="10">10 states</button>
-    <button class="option-btn" data-count="20">20 states</button>
-    <button class="option-btn" data-count="30">30 states</button>
-    <button class="option-btn" data-count="48">All 48</button>
+<div id="app">
+  <div id="setup-screen">
+    <h1>🗺️ US States Geography Quiz</h1>
+    <p>Click on the map to place each state. The closer your click, the more points you earn!</p>
+    <div>
+      <p style="font-size:13px; color:#555; text-align:center; margin-bottom:10px;">How many states do you want to review?</p>
+      <div class="option-grid">
+        <button class="option-btn" data-count="10">10 states</button>
+        <button class="option-btn" data-count="20">20 states</button>
+        <button class="option-btn" data-count="30">30 states</button>
+        <button class="option-btn" data-count="48">48 Contiguous States</button>
+      </div>
+    </div>
+    <button id="start-btn" disabled>Start game</button>
   </div>
-  <button id="start-btn" disabled>Start game</button>
-</div>
 
-<div id="game-screen" class="screen">
-  <div id="hud">
-    <div id="counter-box">0 / 0</div>
-    <div id="state-prompt">—</div>
-    <div id="score-box">Score: <strong>0</strong></div>
-  </div>
-  <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
-  <div id="map-container">
-    <svg id="map-svg" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-      <g id="states-layer"></g>
-      <g id="overlay-layer"></g>
-    </svg>
-  </div>
-  <div id="feedback-row">
+  <div id="game-screen">
+    <div id="hud">
+      <div style="min-width:110px; font-size:13px; color:#555;" id="counter-box">0 / 0</div>
+      <div id="state-prompt">—</div>
+      <div id="score-box">Score: <strong>0</strong></div>
+    </div>
+    <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+    <div id="map-container">
+      <svg id="map-svg" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
+        <g id="states-layer"></g>
+        <g id="overlay-layer"></g>
+      </svg>
+    </div>
     <div id="feedback"></div>
-    <button id="next-btn">Next →</button>
+    <button id="next-btn">Next state →</button>
   </div>
-</div>
 
-<div id="results-screen" class="screen">
-  <h2>Game over!</h2>
-  <div id="final-score">0</div>
-  <p id="results-detail" class="sub"></p>
-  <button id="play-again-btn">Play again</button>
+  <div id="results-screen">
+    <h2>Game over!</h2>
+    <div id="final-score">0</div>
+    <p id="results-detail"></p>
+    <button id="play-again-btn">Play again</button>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -107,37 +92,23 @@ const STATE_DATA = {
   "Vermont":{"fips":"50"},"Virginia":{"fips":"51"},"Washington":{"fips":"53"},
   "West Virginia":{"fips":"54"},"Wisconsin":{"fips":"55"},"Wyoming":{"fips":"56"}
 };
-const CONTIGUOUS_FIPS = new Set(Object.values(STATE_DATA).map(d => d.fips));
+const CONTIGUOUS_FIPS = new Set(Object.values(STATE_DATA).map(d=>d.fips));
 
 let projection, pathGen, topoData, geoFeatures;
-let gameCount = 0, stateQueue = [], currentIdx = 0, totalScore = 0, answered = false, selectedCount = null;
+let gameCount=0, stateQueue=[], currentIdx=0, totalScore=0, answered=false, selectedCount=null;
 
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-// Convert a mouse event on the SVG into viewBox coordinates,
-// correctly accounting for preserveAspectRatio letterboxing.
-function clientToSVG(svg, clientX, clientY) {
-  const rect = svg.getBoundingClientRect();
-  const vbWidth = 960, vbHeight = 600;
-  const containerW = rect.width, containerH = rect.height;
-
-  // Figure out the uniform scale and offsets (xMidYMid meet)
-  const scale = Math.min(containerW / vbWidth, containerH / vbHeight);
-  const renderedW = vbWidth * scale;
-  const renderedH = vbHeight * scale;
-  const offsetX = (containerW - renderedW) / 2;
-  const offsetY = (containerH - renderedH) / 2;
-
-  const localX = clientX - rect.left;
-  const localY = clientY - rect.top;
-
-  const svgX = (localX - offsetX) / scale;
-  const svgY = (localY - offsetY) / scale;
-  return [svgX, svgY];
-}
+const setupScreen = document.getElementById('setup-screen');
+const gameScreen = document.getElementById('game-screen');
+const resultsScreen = document.getElementById('results-screen');
+const statePrompt = document.getElementById('state-prompt');
+const scoreBox = document.getElementById('score-box');
+const counterBox = document.getElementById('counter-box');
+const feedback = document.getElementById('feedback');
+const nextBtn = document.getElementById('next-btn');
+const progressBar = document.getElementById('progress-bar');
+const mapSvg = document.getElementById('map-svg');
+const statesLayer = document.getElementById('states-layer');
+const overlayLayer = document.getElementById('overlay-layer');
 
 document.querySelectorAll('.option-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -149,12 +120,13 @@ document.querySelectorAll('.option-btn').forEach(btn => {
 });
 
 document.getElementById('start-btn').addEventListener('click', startGame);
-document.getElementById('next-btn').addEventListener('click', nextState);
+nextBtn.addEventListener('click', nextState);
 document.getElementById('play-again-btn').addEventListener('click', () => {
+  resultsScreen.style.display = 'none';
+  setupScreen.style.display = 'flex';
   document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('start-btn').disabled = true;
   selectedCount = null;
-  showScreen('setup-screen');
 });
 
 async function loadMap() {
@@ -162,95 +134,109 @@ async function loadMap() {
   const res = await fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');
   topoData = await res.json();
   geoFeatures = topojson.feature(topoData, topoData.objects.states).features
-    .filter(f => CONTIGUOUS_FIPS.has(f.id.toString().padStart(2, '0')));
+    .filter(f => CONTIGUOUS_FIPS.has(f.id.toString().padStart(2,'0')));
+
   projection = d3.geoAlbersUsa().scale(1280).translate([480, 300]);
   pathGen = d3.geoPath().projection(projection);
-  const layer = document.getElementById('states-layer');
-  layer.innerHTML = '';
+
+  statesLayer.innerHTML = '';
   geoFeatures.forEach(f => {
-    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    p.setAttribute('d', pathGen(f));
-    p.setAttribute('fill', MAP_FILL);
-    p.setAttribute('stroke', MAP_FILL);
-    p.setAttribute('stroke-width', '0.5');
-    p.dataset.fips = f.id.toString().padStart(2, '0');
-    layer.appendChild(p);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', pathGen(f));
+    path.setAttribute('fill', MAP_FILL);
+    path.setAttribute('stroke', MAP_FILL);
+    path.setAttribute('stroke-width', '0.5');
+    path.dataset.fips = f.id.toString().padStart(2,'0');
+    statesLayer.appendChild(path);
   });
 }
 
 function startGame() {
-  showScreen('game-screen');
-  totalScore = 0; currentIdx = 0; answered = false;
+  setupScreen.style.display = 'none';
+  gameScreen.style.display = 'flex';
+  gameScreen.style.flexDirection = 'column';
+  totalScore=0; currentIdx=0; answered=false;
   const shuffled = Object.keys(STATE_DATA).sort(() => Math.random() - 0.5);
   stateQueue = shuffled.slice(0, selectedCount);
   gameCount = stateQueue.length;
-  document.getElementById('score-box').innerHTML = 'Score: <strong>0</strong>';
+  scoreBox.innerHTML = 'Score: <strong>0</strong>';
   loadMap().then(() => showState());
 }
 
 function showState() {
   answered = false;
-  document.getElementById('next-btn').style.display = 'none';
-  document.getElementById('feedback').textContent = '';
-  document.getElementById('overlay-layer').innerHTML = '';
+  nextBtn.style.display = 'none';
+  feedback.textContent = '';
+  overlayLayer.innerHTML = '';
   resetStateColors();
-  document.getElementById('state-prompt').textContent = stateQueue[currentIdx];
-  document.getElementById('counter-box').textContent = (currentIdx + 1) + ' / ' + gameCount;
-  document.getElementById('progress-bar').style.width = (currentIdx / gameCount * 100) + '%';
-  document.getElementById('map-svg').style.cursor = 'crosshair';
+  statePrompt.textContent = stateQueue[currentIdx];
+  counterBox.textContent = (currentIdx+1) + ' / ' + gameCount;
+  progressBar.style.width = (currentIdx/gameCount*100) + '%';
+  mapSvg.style.cursor = 'crosshair';
 }
 
 function resetStateColors() {
-  document.getElementById('states-layer').querySelectorAll('path').forEach(p => {
+  statesLayer.querySelectorAll('path').forEach(p => {
     p.setAttribute('fill', MAP_FILL);
     p.setAttribute('stroke', MAP_FILL);
     p.setAttribute('stroke-width', '0.5');
   });
 }
 
+// Finds the closest point on a GeoJSON polygon ring to a given [lng, lat]
 function closestPointOnRings(rings, lng, lat) {
-  let min = Infinity;
-  const px = projection([lng, lat]);
-  if (!px) return min;
+  let minDist = Infinity;
   for (const ring of rings) {
     for (let i = 0; i < ring.length - 1; i++) {
-      const a = projection(ring[i]), b = projection(ring[i + 1]);
-      if (!a || !b) continue;
-      const dx = b[0] - a[0], dy = b[1] - a[1], lenSq = dx * dx + dy * dy;
-      let t = lenSq > 0 ? ((px[0] - a[0]) * dx + (px[1] - a[1]) * dy) / lenSq : 0;
+      const [x1, y1] = projection(ring[i]);
+      const [x2, y2] = projection(ring[i+1]);
+      const px = projection([lng, lat]);
+      if (!px) continue;
+      const [cx, cy] = px;
+      const dx = x2 - x1, dy = y2 - y1;
+      const lenSq = dx*dx + dy*dy;
+      let t = lenSq > 0 ? ((cx-x1)*dx + (cy-y1)*dy) / lenSq : 0;
       t = Math.max(0, Math.min(1, t));
-      const d = Math.sqrt((px[0] - (a[0] + t * dx)) ** 2 + (px[1] - (a[1] + t * dy)) ** 2);
-      if (d < min) min = d;
+      const nearX = x1 + t*dx, nearY = y1 + t*dy;
+      const d = Math.sqrt((cx-nearX)**2 + (cy-nearY)**2);
+      if (d < minDist) minDist = d;
     }
   }
-  return min;
+  return minDist;
 }
 
 function getRings(feature) {
   const rings = [];
-  const g = feature.geometry;
-  if (g.type === 'Polygon') rings.push(...g.coordinates);
-  else if (g.type === 'MultiPolygon') g.coordinates.forEach(p => rings.push(...p));
+  const geom = feature.geometry;
+  if (geom.type === 'Polygon') {
+    rings.push(...geom.coordinates);
+  } else if (geom.type === 'MultiPolygon') {
+    geom.coordinates.forEach(poly => rings.push(...poly));
+  }
   return rings;
 }
 
-document.getElementById('map-svg').addEventListener('click', function(e) {
+mapSvg.addEventListener('click', function(e) {
   if (answered) return;
   answered = true;
-  this.style.cursor = 'default';
+  mapSvg.style.cursor = 'default';
 
-  const [svgX, svgY] = clientToSVG(this, e.clientX, e.clientY);
+  const rect = mapSvg.getBoundingClientRect();
+  const scaleX = 960 / rect.width;
+  const scaleY = 600 / rect.height;
+  const svgX = (e.clientX - rect.left) * scaleX;
+  const svgY = (e.clientY - rect.top) * scaleY;
 
   const stateName = stateQueue[currentIdx];
   const fips = STATE_DATA[stateName].fips;
-  const feature = geoFeatures.find(f => f.id.toString().padStart(2, '0') === fips);
+  const feature = geoFeatures.find(f => f.id.toString().padStart(2,'0') === fips);
   if (!feature) return;
 
-  const tp = document.getElementById('states-layer').querySelector(`[data-fips="${fips}"]`);
-  if (tp) {
-    tp.setAttribute('fill', '#B5D4F4');
-    tp.setAttribute('stroke', '#185FA5');
-    tp.setAttribute('stroke-width', '2');
+  const targetPath = statesLayer.querySelector(`[data-fips="${fips}"]`);
+  if (targetPath) {
+    targetPath.setAttribute('fill', '#B5D4F4');
+    targetPath.setAttribute('stroke', '#185FA5');
+    targetPath.setAttribute('stroke-width', '2');
   }
 
   const centroid = pathGen.centroid(feature);
@@ -261,60 +247,64 @@ document.getElementById('map-svg').addEventListener('click', function(e) {
   if (isInside) {
     points = 100;
   } else {
+    // Measure pixel distance from click to nearest point on the actual border
     let distPx;
     if (geoCoord) {
       distPx = closestPointOnRings(getRings(feature), geoCoord[0], geoCoord[1]);
     } else {
-      distPx = Math.sqrt((svgX - centroid[0]) ** 2 + (svgY - centroid[1]) ** 2);
+      // click was outside projection area — use centroid distance as fallback
+      distPx = Math.sqrt((svgX - centroid[0])**2 + (svgY - centroid[1])**2);
     }
-    points = Math.min(99, Math.max(0, Math.round(100 * Math.exp(-distPx / 80))));
+    points = Math.max(0, Math.round(100 * Math.exp(-distPx / 80)));
+    // Cap at 99 so only true inside clicks earn 100
+    points = Math.min(points, 99);
   }
 
   totalScore += points;
-  document.getElementById('score-box').innerHTML = 'Score: <strong>' + totalScore.toLocaleString() + '</strong>';
+  scoreBox.innerHTML = 'Score: <strong>' + totalScore.toLocaleString() + '</strong>';
 
-  const ol = document.getElementById('overlay-layer');
+  const lineEl = document.createElementNS('http://www.w3.org/2000/svg','line');
+  lineEl.setAttribute('x1', svgX); lineEl.setAttribute('y1', svgY);
+  lineEl.setAttribute('x2', centroid[0]); lineEl.setAttribute('y2', centroid[1]);
+  lineEl.setAttribute('stroke', isInside ? '#1D9E75' : '#D85A30');
+  lineEl.setAttribute('stroke-width', '1.5');
+  lineEl.setAttribute('stroke-dasharray', '4 3');
+  overlayLayer.appendChild(lineEl);
 
-  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  line.setAttribute('x1', svgX); line.setAttribute('y1', svgY);
-  line.setAttribute('x2', centroid[0]); line.setAttribute('y2', centroid[1]);
-  line.setAttribute('stroke', isInside ? '#1D9E75' : '#D85A30');
-  line.setAttribute('stroke-width', '1.5');
-  line.setAttribute('stroke-dasharray', '4 3');
-  ol.appendChild(line);
-
-  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  dot.setAttribute('cx', svgX); dot.setAttribute('cy', svgY); dot.setAttribute('r', '6');
+  const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('cx', svgX); dot.setAttribute('cy', svgY);
+  dot.setAttribute('r', '6');
   dot.setAttribute('fill', isInside ? '#1D9E75' : '#D85A30');
-  dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', '2');
-  ol.appendChild(dot);
+  dot.setAttribute('stroke', '#fff');
+  dot.setAttribute('stroke-width', '2');
+  overlayLayer.appendChild(dot);
 
   const bx = svgX + 10, by = svgY - 18;
-  const br = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  br.setAttribute('x', bx - 2); br.setAttribute('y', by - 12);
-  br.setAttribute('width', '58'); br.setAttribute('height', '18'); br.setAttribute('rx', '4');
-  br.setAttribute('fill', isInside ? '#1D9E75' : '#D85A30');
-  ol.appendChild(br);
+  const badgeRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  badgeRect.setAttribute('x', bx-2); badgeRect.setAttribute('y', by-12);
+  badgeRect.setAttribute('width', '56'); badgeRect.setAttribute('height', '18');
+  badgeRect.setAttribute('rx', '4');
+  badgeRect.setAttribute('fill', isInside ? '#1D9E75' : '#D85A30');
+  const badgeTxt = document.createElementNS('http://www.w3.org/2000/svg','text');
+  badgeTxt.setAttribute('x', bx+26); badgeTxt.setAttribute('y', by);
+  badgeTxt.setAttribute('text-anchor', 'middle');
+  badgeTxt.setAttribute('fill', '#fff');
+  badgeTxt.setAttribute('font-size', '11');
+  badgeTxt.setAttribute('font-weight', '500');
+  badgeTxt.textContent = '+' + points + ' pts';
+  overlayLayer.appendChild(badgeRect);
+  overlayLayer.appendChild(badgeTxt);
 
-  const bt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  bt.setAttribute('x', bx + 27); bt.setAttribute('y', by);
-  bt.setAttribute('text-anchor', 'middle'); bt.setAttribute('fill', '#fff');
-  bt.setAttribute('font-size', '11'); bt.setAttribute('font-weight', '500');
-  bt.textContent = '+' + points + ' pts';
-  ol.appendChild(bt);
-
-  const fb = document.getElementById('feedback');
   if (isInside) {
-    fb.innerHTML = '✓ <strong>' + stateName + '</strong> — +' + points + ' pts';
-    fb.style.color = '#0F6E56';
+    feedback.innerHTML = '✓ Nice! <strong>' + stateName + '</strong> — +' + points + ' points';
+    feedback.style.color = '#0F6E56';
   } else {
-    fb.innerHTML = '✗ That was <strong>' + stateName + '</strong> — +' + points + ' pts';
-    fb.style.color = '#993C1D';
+    feedback.innerHTML = '✗ That was <strong>' + stateName + '</strong> — +' + points + ' points';
+    feedback.style.color = '#993C1D';
   }
 
-  const nb = document.getElementById('next-btn');
-  nb.style.display = 'block';
-  nb.textContent = currentIdx === gameCount - 1 ? 'See results →' : 'Next →';
+  nextBtn.style.display = 'block';
+  nextBtn.textContent = currentIdx === gameCount-1 ? 'See results' : 'Next state →';
 });
 
 function nextState() {
@@ -324,13 +314,11 @@ function nextState() {
 }
 
 function endGame() {
-  showScreen('results-screen');
+  gameScreen.style.display = 'none';
+  resultsScreen.style.display = 'flex';
   document.getElementById('final-score').textContent = totalScore.toLocaleString();
-  const total = gameCount * 100;
-  const pct = Math.round(totalScore / total * 100);
+  const pct = Math.round(totalScore / (gameCount*100) * 100);
   document.getElementById('results-detail').textContent =
-    gameCount + ' states · ' + totalScore.toLocaleString() + ' / ' + total.toLocaleString() + ' pts (' + pct + '%)';
+    gameCount + ' states · ' + totalScore.toLocaleString() + ' / ' + (gameCount*100).toLocaleString() + ' possible points (' + pct + '%)';
 }
 </script>
-</body>
-</html>
